@@ -13,8 +13,8 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestFindMax(t *testing.T) {
-	bandits := []Bandit{Bandit{mean: 1.0}, Bandit{mean: 2.0}, Bandit{mean: 3.0}}
-	want := Bandit{mean: 3.0}
+	bandits := []*Bandit{&Bandit{mean: 1.0}, &Bandit{mean: 2.0}, &Bandit{mean: 3.0}}
+	want := &Bandit{mean: 3.0}
 	got := findMax(bandits)
 	if got != want {
 		t.Errorf("want %f, got %f", want, got)
