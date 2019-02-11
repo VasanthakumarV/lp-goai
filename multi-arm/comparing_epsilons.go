@@ -90,9 +90,7 @@ func plotData(path string, data plotter.XYs) error {
 	if err != nil {
 		return fmt.Errorf("could not write to png file: %v", err)
 	}
-
 	return nil
-
 }
 
 // findMax returns the bandit with the highest mean for rewards
