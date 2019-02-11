@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
 )
 
 // Bandit struct represenets hyp bandit with known return(reward) encoded in m,
@@ -33,19 +34,14 @@ func main() {
 	bandits := []*Bandit{&Bandit{m: 1.0}, &Bandit{m: 2.0}, &Bandit{m: 3.0}}
 	// running an experiment for the given list of bandits, the greedy factor for the experiment
 	// and the number of iters
-	runExperiment(bandits, 0.5, 10)
+	runExperiment(bandits, 0.5, 1000)
 	for _, b := range bandits {
 		fmt.Println(b.mean, b.m)
 	}
 }
 
-type xy struct {
-	x int
-	y float64
-}
-
 func runExperiment(bandits []*Bandit, eps float64, n int) {
-	data := make([]xy, n)
+	data := make(plotter.XYs, n)
 	for i := 0; i < n; i++ {
 		p := rand.Float64()
 		var b *Bandit
@@ -55,8 +51,9 @@ func runExperiment(bandits []*Bandit, eps float64, n int) {
 			b = findMax(bandits)
 		}
 		x := b.Pull()
-		data[i].x = i
-		data[i].y = x
+
+		data[i].X = float64(i)
+		data[i].Y = x
 		b.Update(x)
 	}
 
@@ -66,7 +63,7 @@ func runExperiment(bandits []*Bandit, eps float64, n int) {
 	}
 }
 
-func plotData(path string, data []xy) error {
+func plotData(path string, data plotter.XYs) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("could not create png file: %v", err)
@@ -77,6 +74,13 @@ func plotData(path string, data []xy) error {
 	if err != nil {
 		return fmt.Errorf("could not create plot: %v", err)
 	}
+
+	s, err := plotter.NewLine(plotter.XYs(data))
+	if err != nil {
+		return fmt.Errorf("could not create scatter: %v", err)
+	}
+	p.Add(s)
+
 	wt, err := p.WriterTo(512, 512, "png")
 	if err != nil {
 		return fmt.Errorf("could not create wtiter: %v", err)
