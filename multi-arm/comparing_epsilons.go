@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
+	"os"
+
+	"gonum.org/v1/plot"
 )
 
-// Bandit struct represenets hyp bandit with known return encoded in m,
+// Bandit struct represenets hyp bandit with known return(reward) encoded in m,
 // the number of times it has run is captured in n, and mean keeps track
 // of the average returns from a particular bandit
 type Bandit struct {
@@ -29,23 +33,19 @@ func main() {
 	bandits := []*Bandit{&Bandit{m: 1.0}, &Bandit{m: 2.0}, &Bandit{m: 3.0}}
 	// running an experiment for the given list of bandits, the greedy factor for the experiment
 	// and the number of iters
-	run_experiment(bandits, 0.5, 10)
+	runExperiment(bandits, 0.5, 10)
 	for _, b := range bandits {
 		fmt.Println(b.mean, b.m)
 	}
 }
 
-func findMax(bandits []*Bandit) *Bandit {
-	max := bandits[0]
-	for _, bandit := range bandits {
-		if bandit.mean > max.mean {
-			max = bandit
-		}
-	}
-	return max
+type xy struct {
+	x int
+	y float64
 }
 
-func run_experiment(bandits []*Bandit, eps float64, n int) {
+func runExperiment(bandits []*Bandit, eps float64, n int) {
+	data := make([]xy, n)
 	for i := 0; i < n; i++ {
 		p := rand.Float64()
 		var b *Bandit
@@ -55,6 +55,49 @@ func run_experiment(bandits []*Bandit, eps float64, n int) {
 			b = findMax(bandits)
 		}
 		x := b.Pull()
+		data[i].x = i
+		data[i].y = x
 		b.Update(x)
 	}
+
+	err := plotData("out.png", data)
+	if err != nil {
+		log.Fatalf("error creating chart: %v", err)
+	}
+}
+
+func plotData(path string, data []xy) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("could not create png file: %v", err)
+	}
+	defer f.Close()
+
+	p, err := plot.New()
+	if err != nil {
+		return fmt.Errorf("could not create plot: %v", err)
+	}
+	wt, err := p.WriterTo(512, 512, "png")
+	if err != nil {
+		return fmt.Errorf("could not create wtiter: %v", err)
+	}
+
+	_, err = wt.WriteTo(f)
+	if err != nil {
+		return fmt.Errorf("could not write to png file: %v", err)
+	}
+
+	return nil
+
+}
+
+// findMax returns the bandit with the highest mean for rewards
+func findMax(bandits []*Bandit) *Bandit {
+	max := bandits[0]
+	for _, bandit := range bandits {
+		if bandit.mean > max.mean {
+			max = bandit
+		}
+	}
+	return max
 }
